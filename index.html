@@ -755,7 +755,8 @@ a.onclick=function(){
 document.querySelectorAll('.donate-amt').forEach(function(b){b.classList.remove('active')});
 a.classList.add('active');
 var amt=a.getAttribute('data-amount');
-if(amt){document.getElementById('customAmt').value=amt}
+var actual=a.getAttribute('data-actual');
+if(amt){document.getElementById('customAmt').value=actual||amt}
 }
 });
 
@@ -769,7 +770,8 @@ document.body.style.overflow='hidden';
 var activeStrip=document.querySelector('.donate-amt.active');
 if(activeStrip&&activeStrip.getAttribute('data-amount')){
 selectedAmount=parseInt(activeStrip.getAttribute('data-amount'));
-document.getElementById('customAmt').value=selectedAmount;
+var actualVal=activeStrip.getAttribute('data-actual');
+document.getElementById('customAmt').value=actualVal||selectedAmount;
 updateModalAmts(selectedAmount);
 }
 }
@@ -800,7 +802,8 @@ b.classList.add('active-amt');
 document.querySelectorAll('.modal-amt').forEach(function(b){
 b.onclick=function(){
 var v=parseInt(b.getAttribute('data-amount'));
-document.getElementById('customAmt').value=v;
+var actual=b.getAttribute('data-actual');
+document.getElementById('customAmt').value=actual||v;
 selectedAmount=v;
 updateModalAmts(v);
 }
