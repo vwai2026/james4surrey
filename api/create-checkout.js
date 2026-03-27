@@ -1,12 +1,11 @@
-// Vercel Serverless Function — Stripe Checkout Session
-// POST /api/create-checkout
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const Stripe = require('stripe');
 
-const DOMAIN = process.env.DOMAIN || 'https://james4surrey.ca';
+module.exports = async function handler(req, res) {
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+  const DOMAIN = process.env.DOMAIN || 'https://james4surrey-deploy.vercel.app';
 
-module.exports = async (req, res) => {
   // CORS
-  res.setHeader('Access-Control-Allow-Origin', DOMAIN);
+  res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
@@ -15,8 +14,8 @@ module.exports = async (req, res) => {
 
   try {
     const {
-      amount,        // in dollars (e.g. 50)
-      recurring,     // boolean — monthly recurring
+      amount,
+      recurring,
       firstName,
       lastName,
       email,
@@ -24,38 +23,37 @@ module.exports = async (req, res) => {
       address,
       city,
       postalCode,
-    } = req.body;
+    } = req.body || {};
 
-    // Validate amount
     const cents = Math.round(Number(amount) * 100);
     if (!cents || cents < 500 || cents > 500000) {
       return res.status(400).json({ error: 'Invalid amount. Min $5, Max $5,000.' });
     }
 
-    // Build line item
     const lineItem = {
       price_data: {
         currency: 'cad',
         unit_amount: cents,
         product_data: {
-          name: `Donation to James Yu Campaign`,
+          name: 'Donation to James Yu Campaign',
           description: recurring
-            ? `Monthly $${amount} CAD donation`
-            : `One-time $${amount} CAD donation`,
+            ? 'Monthly $' + amount + ' CAD donation'
+            : 'One-time $' + amount + ' CAD donation',
         },
-        ...(recurring && { recurring: { interval: 'month' } }),
       },
       quantity: 1,
     };
 
-    // Create Checkout Session
-    const session = await stripe.checkout.sessions.create({
+    if (recurring) {
+      lineItem.price_data.recurring = { interval: 'month' };
+    }
+
+    const sessionParams = {
       mode: recurring ? 'subscription' : 'payment',
       payment_method_types: ['card'],
       line_items: [lineItem],
-      customer_email: email || undefined,
-      success_url: `${DOMAIN}/donate-success.html?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${DOMAIN}/pages/donate.html`,
+      success_url: DOMAIN + '/donate-success.html?session_id={CHECKOUT_SESSION_ID}',
+      cancel_url: DOMAIN,
       metadata: {
         donor_first_name: firstName || '',
         donor_last_name: lastName || '',
@@ -65,13 +63,18 @@ module.exports = async (req, res) => {
         donor_postal: postalCode || '',
         campaign: 'james4surrey-2026',
       },
-      // BC election compliance: collect billing address
       billing_address_collection: 'required',
-    });
+    };
+
+    if (email) {
+      sessionParams.customer_email = email;
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionParams);
 
     return res.status(200).json({ url: session.url });
   } catch (err) {
-    console.error('Stripe error:', err.message);
+    console.error('Stripe error:', err);
     return res.status(500).json({ error: err.message });
   }
 };
