@@ -505,6 +505,7 @@ a{text-decoration:none;color:inherit}
 <span class="donate-amt active" data-amount="50">$50</span>
 <span class="donate-amt" data-amount="100">$100</span>
 <span class="donate-amt" data-amount="250">$250</span>
+<span class="donate-amt" data-amount="1429" data-actual="1429.70">$1,429</span>
 <span class="donate-amt donate-other" data-en="DONATE NOW" data-zh="立即捐款" id="donateNowBtn">DONATE NOW</span>
 </div>
 </div>
@@ -521,6 +522,7 @@ a{text-decoration:none;color:inherit}
 <button class="modal-amt active-amt" data-amount="50" style="padding:10px 20px;border:2px solid #c41e3a;border-radius:6px;background:#c41e3a;color:#fff;cursor:pointer;font-weight:600;font-size:15px;">$50</button>
 <button class="modal-amt" data-amount="100" style="padding:10px 20px;border:2px solid #ddd;border-radius:6px;background:#fff;cursor:pointer;font-weight:600;font-size:15px;">$100</button>
 <button class="modal-amt" data-amount="250" style="padding:10px 20px;border:2px solid #ddd;border-radius:6px;background:#fff;cursor:pointer;font-weight:600;font-size:15px;">$250</button>
+<button class="modal-amt" data-amount="1429" data-actual="1429.70" style="padding:10px 20px;border:2px solid #ddd;border-radius:6px;background:#fff;cursor:pointer;font-weight:600;font-size:15px;">$1,429</button>
 </div>
 <div style="margin-bottom:16px;">
 <label style="font-size:13px;color:#666;display:block;margin-bottom:4px;" data-en="Custom Amount (CAD)" data-zh="自定义金额 (CAD)">Custom Amount (CAD)</label>
@@ -814,8 +816,11 @@ e.preventDefault();
 var btn=document.getElementById('donateSubmitBtn');
 btn.disabled=true;
 btn.textContent='Processing...';
+var rawAmt=document.getElementById('customAmt').value;
+var activeModalBtn=document.querySelector('.modal-amt.active-amt');
+var actualAmt=(activeModalBtn&&activeModalBtn.getAttribute('data-actual'))?parseFloat(activeModalBtn.getAttribute('data-actual')):parseFloat(rawAmt)||50;
 var body={
-amount:parseInt(document.getElementById('customAmt').value)||50,
+amount:actualAmt,
 recurring:document.getElementById('recurringChk').checked,
 firstName:document.getElementById('dFirstName').value,
 lastName:document.getElementById('dLastName').value,
