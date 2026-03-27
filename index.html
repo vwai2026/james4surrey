@@ -548,7 +548,7 @@ a{text-decoration:none;color:inherit}
 <span data-en="I confirm I am a Canadian citizen or permanent resident, making this donation with my own funds. My name and donation amount may be disclosed per BC election law." data-zh="我确认我是加拿大公民或永久居民，此捐款来自个人资金。我的姓名和金额可能按BC省选举法要求披露。">I confirm I am a Canadian citizen or permanent resident, making this donation with my own funds.</span>
 </label>
 <button type="submit" id="donateSubmitBtn" style="width:100%;padding:14px;background:#f5c518;color:#0a1628;border:none;border-radius:6px;font-size:16px;font-weight:700;cursor:pointer;font-family:'Oswald',sans-serif;text-transform:uppercase;letter-spacing:.05em;">
-❤️ Complete Donation
+COMPLETE DONATION
 </button>
 <p style="text-align:center;font-size:11px;color:#999;margin-top:12px;">🔒 Secure payment powered by Stripe</p>
 </form>
@@ -835,8 +835,8 @@ headers:{'Content-Type':'application/json'},
 body:JSON.stringify(body)
 }).then(function(r){return r.json()}).then(function(data){
 if(data.url){window.location.href=data.url}
-else{alert('Error: '+(data.error||'Unknown error'));btn.disabled=false;btn.textContent='❤️ Complete Donation'}
-}).catch(function(err){alert('Connection error. Please try again.');btn.disabled=false;btn.textContent='❤️ Complete Donation'});
+else{alert('Error: '+(data.error||'Unknown error'));btn.disabled=false;btn.textContent='COMPLETE DONATION'}
+}).catch(function(err){alert('Connection error. Please try again.');btn.disabled=false;btn.textContent='COMPLETE DONATION'});
 };
 
 document.getElementById('heroForm').onsubmit=function(e){e.preventDefault();alert(lang==='en'?'Thank you for joining!':'感谢加入！')};
