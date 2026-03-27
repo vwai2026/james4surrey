@@ -1,3 +1,33 @@
+const https = require('https');
+
+function stripeRequest(secretKey, params) {
+  return new Promise((resolve, reject) => {
+    const body = params.toString();
+    const options = {
+      hostname: 'api.stripe.com',
+      port: 443,
+      path: '/v1/checkout/sessions',
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + secretKey,
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Content-Length': Buffer.byteLength(body),
+      },
+    };
+    const req = https.request(options, (res) => {
+      let data = '';
+      res.on('data', (chunk) => { data += chunk; });
+      res.on('end', () => {
+        try { resolve({ status: res.statusCode, body: JSON.parse(data) }); }
+        catch (e) { reject(new Error('Invalid JSON: ' + data.slice(0, 200))); }
+      });
+    });
+    req.on('error', reject);
+    req.write(body);
+    req.end();
+  });
+}
+
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -24,22 +54,6 @@ module.exports = async function handler(req, res) {
       return res.status(400).json({ error: 'Invalid amount. Min $5, Max $5,000.' });
     }
 
-    const lineItem = {
-      price_data: {
-        currency: 'cad',
-        unit_amount: cents,
-        product_data: {
-          name: 'Donation to James Yu Campaign',
-          description: (recurring ? 'Monthly' : 'One-time') + ' $' + amount + ' CAD donation',
-        },
-      },
-      quantity: 1,
-    };
-
-    if (recurring) {
-      lineItem.price_data.recurring = { interval: 'month' };
-    }
-
     const params = new URLSearchParams();
     params.append('mode', recurring ? 'subscription' : 'payment');
     params.append('payment_method_types[]', 'card');
@@ -62,23 +76,14 @@ module.exports = async function handler(req, res) {
     params.append('metadata[donor_postal]', postalCode || '');
     params.append('metadata[campaign]', 'james4surrey-2026');
 
-    const response = await fetch('https://api.stripe.com/v1/checkout/sessions', {
-      method: 'POST',
-      headers: {
-        'Authorization': 'Bearer ' + STRIPE_SECRET_KEY,
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: params.toString(),
-    });
+    const result = await stripeRequest(STRIPE_SECRET_KEY, params);
 
-    const data = await response.json();
-
-    if (!response.ok) {
-      console.error('Stripe API error:', data);
-      return res.status(response.status).json({ error: data.error?.message || 'Stripe error' });
+    if (result.status !== 200) {
+      console.error('Stripe API error:', JSON.stringify(result.body));
+      return res.status(result.status).json({ error: result.body?.error?.message || 'Stripe error' });
     }
 
-    return res.status(200).json({ url: data.url });
+    return res.status(200).json({ url: result.body.url });
   } catch (err) {
     console.error('Server error:', err);
     return res.status(500).json({ error: err.message });
