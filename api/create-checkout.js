@@ -1,10 +1,4 @@
-const Stripe = require('stripe');
-
 module.exports = async function handler(req, res) {
-  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-  const DOMAIN = process.env.DOMAIN || 'https://james4surrey-deploy.vercel.app';
-
-  // CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -12,17 +6,17 @@ module.exports = async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
+  const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY;
+  const DOMAIN = process.env.DOMAIN || 'https://james4surrey-deploy.vercel.app';
+
+  if (!STRIPE_SECRET_KEY) {
+    return res.status(500).json({ error: 'STRIPE_SECRET_KEY not configured' });
+  }
+
   try {
     const {
-      amount,
-      recurring,
-      firstName,
-      lastName,
-      email,
-      phone,
-      address,
-      city,
-      postalCode,
+      amount, recurring, firstName, lastName, email,
+      phone, address, city, postalCode,
     } = req.body || {};
 
     const cents = Math.round(Number(amount) * 100);
@@ -36,9 +30,7 @@ module.exports = async function handler(req, res) {
         unit_amount: cents,
         product_data: {
           name: 'Donation to James Yu Campaign',
-          description: recurring
-            ? 'Monthly $' + amount + ' CAD donation'
-            : 'One-time $' + amount + ' CAD donation',
+          description: (recurring ? 'Monthly' : 'One-time') + ' $' + amount + ' CAD donation',
         },
       },
       quantity: 1,
@@ -48,33 +40,47 @@ module.exports = async function handler(req, res) {
       lineItem.price_data.recurring = { interval: 'month' };
     }
 
-    const sessionParams = {
-      mode: recurring ? 'subscription' : 'payment',
-      payment_method_types: ['card'],
-      line_items: [lineItem],
-      success_url: DOMAIN + '/donate-success.html?session_id={CHECKOUT_SESSION_ID}',
-      cancel_url: DOMAIN,
-      metadata: {
-        donor_first_name: firstName || '',
-        donor_last_name: lastName || '',
-        donor_phone: phone || '',
-        donor_address: address || '',
-        donor_city: city || '',
-        donor_postal: postalCode || '',
-        campaign: 'james4surrey-2026',
-      },
-      billing_address_collection: 'required',
-    };
+    const params = new URLSearchParams();
+    params.append('mode', recurring ? 'subscription' : 'payment');
+    params.append('payment_method_types[]', 'card');
+    params.append('line_items[0][price_data][currency]', 'cad');
+    params.append('line_items[0][price_data][unit_amount]', String(cents));
+    params.append('line_items[0][price_data][product_data][name]', 'Donation to James Yu Campaign');
+    if (recurring) {
+      params.append('line_items[0][price_data][recurring][interval]', 'month');
+    }
+    params.append('line_items[0][quantity]', '1');
+    params.append('success_url', DOMAIN + '/donate-success.html?session_id={CHECKOUT_SESSION_ID}');
+    params.append('cancel_url', DOMAIN);
+    params.append('billing_address_collection', 'required');
+    if (email) params.append('customer_email', email);
+    params.append('metadata[donor_first_name]', firstName || '');
+    params.append('metadata[donor_last_name]', lastName || '');
+    params.append('metadata[donor_phone]', phone || '');
+    params.append('metadata[donor_address]', address || '');
+    params.append('metadata[donor_city]', city || '');
+    params.append('metadata[donor_postal]', postalCode || '');
+    params.append('metadata[campaign]', 'james4surrey-2026');
 
-    if (email) {
-      sessionParams.customer_email = email;
+    const response = await fetch('https://api.stripe.com/v1/checkout/sessions', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + STRIPE_SECRET_KEY,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: params.toString(),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.error('Stripe API error:', data);
+      return res.status(response.status).json({ error: data.error?.message || 'Stripe error' });
     }
 
-    const session = await stripe.checkout.sessions.create(sessionParams);
-
-    return res.status(200).json({ url: session.url });
+    return res.status(200).json({ url: data.url });
   } catch (err) {
-    console.error('Stripe error:', err);
+    console.error('Server error:', err);
     return res.status(500).json({ error: err.message });
   }
 };
