@@ -519,7 +519,7 @@ a{text-decoration:none;color:inherit}
 
 <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;" id="modalAmounts">
 <button class="modal-amt" data-amount="25" style="padding:10px 20px;border:2px solid #ddd;border-radius:6px;background:#fff;cursor:pointer;font-weight:600;font-size:15px;">$25</button>
-<button class="modal-amt active-amt" data-amount="50" style="padding:10px 20px;border:2px solid #c41e3a;border-radius:6px;background:#c41e3a;color:#fff;cursor:pointer;font-weight:600;font-size:15px;">$50</button>
+<button class="modal-amt active-amt" data-amount="50" style="padding:10px 20px;border:2px solid #f5c518;border-radius:6px;background:#f5c518;color:#0a1628;cursor:pointer;font-weight:700;font-size:15px;">$50</button>
 <button class="modal-amt" data-amount="100" style="padding:10px 20px;border:2px solid #ddd;border-radius:6px;background:#fff;cursor:pointer;font-weight:600;font-size:15px;">$100</button>
 <button class="modal-amt" data-amount="250" style="padding:10px 20px;border:2px solid #ddd;border-radius:6px;background:#fff;cursor:pointer;font-weight:600;font-size:15px;">$250</button>
 <button class="modal-amt" data-amount="1429" data-actual="1429.70" style="padding:10px 20px;border:2px solid #f5c518;border-radius:6px;background:#f5c518;color:#0a1628;cursor:pointer;font-weight:700;font-size:15px;">$1,429</button>
@@ -789,7 +789,7 @@ document.querySelectorAll('.modal-amt').forEach(function(b){
 b.style.border='2px solid #ddd';b.style.background='#fff';b.style.color='#222';
 b.classList.remove('active-amt');
 if(parseInt(b.getAttribute('data-amount'))===val){
-b.style.border='2px solid #c41e3a';b.style.background='#c41e3a';b.style.color='#fff';
+b.style.border='2px solid #f5c518';b.style.background='#f5c518';b.style.color='#0a1628';
 b.classList.add('active-amt');
 }
 });
